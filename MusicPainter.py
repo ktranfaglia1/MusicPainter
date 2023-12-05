@@ -394,7 +394,7 @@ class MusicPainter(QMainWindow):
 
         # About information for the app.
         self.authors = "Luke Zolenski, Don Spickler, Kyle Tranfaglia, & Timothy McKirgan"
-        self.version = "1.1.1"
+        self.version = "1.2.1"
         self.program_title = "Music Painter"
         self.copyright = "2023"
 
