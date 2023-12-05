@@ -36,7 +36,7 @@ from PySide2.QtWidgets import (QApplication, QMainWindow, QStatusBar, QPushButto
                                QTreeWidget, QSplitter, QAbstractItemView, QTreeWidgetItem,
                                QColorDialog, QFontDialog, QLineEdit, QFrame, QCheckBox,
                                QDialogButtonBox, QComboBox, QDoubleSpinBox, QHeaderView,
-                               QTextEdit, QMenu, QStyleFactory, QTabWidget)
+                               QTextEdit, QMenu, QStyleFactory, QTabWidget, QSlider)
 from PySide2.QtPrintSupport import (QPrintDialog, QPrinter, QPrintPreviewDialog)
 
 # Program imports of our modules.
@@ -421,6 +421,7 @@ class MusicPainter(QMainWindow):
         self.music_thread = None
         self.playsoundstop = False
         self.initializeUI()
+        self.volumeMultiplier = 0.5
         self.chooseAudioDevice()
         # self.createLeftToolBar()
 
@@ -524,6 +525,7 @@ class MusicPainter(QMainWindow):
 
         self.tempIndex = self.InputAudioDevices.currentIndex()
         self.tempIndex1 = self.OutputAudioDevices.currentIndex()
+        self.tempIndex2 = self.volumeMultiplier
 
         self.buttonBox.accepted.connect(self.accept)
         self.buttonBox.rejected.connect(self.reject)
@@ -547,7 +549,7 @@ class MusicPainter(QMainWindow):
         else:
             self.format.addWidget(label2, alignment=Qt.AlignCenter)
 
-        self.format.addSpacing(50)
+        self.format.addSpacing(25)
 
         if (self.outputDeviceCount > 0):
             self.format.addWidget(label3, alignment=Qt.AlignCenter)
@@ -555,8 +557,19 @@ class MusicPainter(QMainWindow):
         else:
             self.format.addWidget(label4, alignment=Qt.AlignCenter)
 
+        self.volumeLabel = QLabel(f'Volume: {int(self.volumeMultiplier * 100)}%', self)
+        self.volumeSlider = QSlider(Qt.Horizontal, self)
+        self.volumeSlider.setMinimum(0)
+        self.volumeSlider.setMaximum(100)
+        self.volumeSlider.setValue(self.volumeMultiplier * 100)
+        self.volumeSlider.valueChanged.connect(self.changeVolume)
+
+        self.format.addSpacing(25)
+        self.format.addWidget(self.volumeLabel)
+        self.format.addWidget(self.volumeSlider)
+
         self.format.addStretch()
-        self.format.addSpacing(20)
+        self.format.addSpacing(10)
         self.format.addWidget(self.buttonBox)
 
         self.dlg.setLayout(self.format)
@@ -567,7 +580,8 @@ class MusicPainter(QMainWindow):
 
     def reject(self):
         self.InputAudioDevices.setCurrentIndex(self.tempIndex)
-        self.OutputAudioDevices.currentIndex(self.tempIndex1)
+        self.OutputAudioDevices.setCurrentIndex(self.tempIndex1)
+        self.volumeMultiplier = self.tempIndex2
         self.dlg.close()
 
     # Initialize the window, calls create methods to set up the GUI.
@@ -868,7 +882,6 @@ class MusicPainter(QMainWindow):
         image_menu.addAction(self.resetZoom_act)
         image_menu.addAction(self.resetCenterZoom_act)
         image_menu.addSeparator()
-        # image_menu.addAction(self.clear_act)
 
         help_menu = menu_bar.addMenu('&Help')
         help_menu.addAction(self.help_about_act)
@@ -1049,10 +1062,14 @@ class MusicPainter(QMainWindow):
             self.SpectList.append(CorSpect)
             # self.setStatusText("Processing segment "+ str(i+1) + " of " + str(len(channelChunks[0])))
 
-        rd_data = []
-        if playmusic:
-            af.rewind()
-            rd_data = af.readframes(chunk)
+        # rd_data = []
+        # rd_temp = []
+        # if playmusic:
+        #     af.rewind()
+        #     rd_temp = af.readframes(chunk)
+        #     data_np = np.frombuffer(rd_temp, dtype=np.int16)  # Convert the binary data to a NumPy array
+        #     amplified_data_np = (data_np * self.volumeMultiplier).astype(np.int16)  # Amplify the audio data
+        #     rd_data = amplified_data_np.tobytes()  # Convert the amplified NumPy array back to binary data
 
         self.paintbrush.resetlistlinks()
 
@@ -1077,14 +1094,18 @@ class MusicPainter(QMainWindow):
                 self.canvas.renderAll = True
 
             if playmusic:
-                stream.write(rd_data)
-                rd_data = af.readframes(chunk)
+                # stream.write(rd_data)
+                # rd_data = af.readframes(chunk)
+                rd_raw = af.readframes(chunk)  # Read frames from the wave file
+                data_np = np.frombuffer(rd_raw, dtype=np.int16)  # Convert the binary data to a NumPy array
+                amplified_data_np = (data_np * self.volumeMultiplier).astype(np.int16)  # Amplify the audio data
+                rd_data = amplified_data_np.tobytes()  # Convert the amplified NumPy array back to binary data
+                stream.write(rd_data)  # Write the amplified audio data to the stream
             #     self.setStatusText("")
             # else:
             #     self.setStatusText("")
             # eltime = "%.3f" %  (i * chunk / wavframerate)
             # self.setStatusText(eltime + " sec.")
-
             i += 1
             # if (not self.timer1Flag):
             #     self.timer1Flag = True
@@ -1225,6 +1246,12 @@ class MusicPainter(QMainWindow):
 
         self.fullrecording = b''.join(frames)
         self.music_thread = None
+
+    def changeVolume(self):
+        volumeValue = self.volumeSlider.value()
+        self.volumeLabel.setText(f'Volume: {volumeValue}%')
+
+        self.volumeMultiplier = volumeValue / 100.0
 
     def AnimateRecordButton(self):
         if self.flag:

@@ -135,9 +135,9 @@ class PaintBrush:
         if self.currentAlgorithm == 1:
             self.algorithm1(data, datapos)
         elif self.currentAlgorithm == 2:
-            self.algorithm2(data, datapos)
+            self.algorithm2(data, spectdata)
         elif self.currentAlgorithm == 3:
-            self.algorithm3(data, datapos)
+            self.algorithm3(data, spectdata)
         elif self.currentAlgorithm == 4:
             self.algorithm4(data, spectdata)
         elif self.currentAlgorithm == 5:
@@ -643,7 +643,7 @@ class PaintBrush:
             avg = (data[0] + data[1]) / 2
         else:
             avg = data[0]
-
+        # print(avg)
         self.avgList.append(avg)
 
         if (not active):
@@ -721,6 +721,7 @@ class PaintBrush:
                     totalAvg += self.avgList.pop(count)
                     count += 1
             totalAvg /= count
+            print(totalAvg)
             self.avgList.clear()
             col = QColor()
             if (totalAvg < 50):
