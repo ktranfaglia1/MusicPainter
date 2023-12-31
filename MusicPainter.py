@@ -2,17 +2,16 @@
 # -*- coding: utf-8 -*-
 """
 Created: 10/1/2022
-Revised: 10/16/2022
+Revised: 12/30/2023
 
-@authors: Luke Zolenski, Don Spickler, Kyle Tranfaglia, & Timothy McKirgan
+@authors: Luke Zolenski, Don Spickler & Kyle Tranfaglia
 
 This program is a music/sound visualizer for frequency data from either a wav file or
-an input stream from a microphone.  It allows the user to set chunk size and rendering algorithm
-and render images based on the wav or stream data.  It also has features to render as the
+an input stream from a microphone. It allows the user to set chunk size and rendering algorithm
+and render images based on the wav or stream data. It also has features to render as the
 wav file is playing and to save the streamed music to a wav file.
 
 """
-
 # System imports.
 import platform
 import sys
@@ -22,24 +21,16 @@ import wave
 import math
 from scipy.io import wavfile
 from threading import Thread
-import sounddevice as sd
 import pyaudio
 import webbrowser
-import time
 from PySide2.QtCore import (Qt, QSize, QDir, QPoint, QMarginsF, QRect, QLine, QTimer)
-from PySide2.QtGui import (QIcon, QFont, QCursor, QPainter, QColor, QFontMetrics,
-                           QMouseEvent, QPageSize, QPageLayout, QPixmap, QBrush)
-from PySide2.QtWidgets import (QApplication, QMainWindow, QStatusBar, QPushButton,
-                               QToolBar, QDockWidget, QSpinBox, QHBoxLayout,
-                               QVBoxLayout, QWidget, QLabel, QScrollArea, QMessageBox,
-                               QInputDialog, QFileDialog, QDialog, QAction, QListWidget,
-                               QTreeWidget, QSplitter, QAbstractItemView, QTreeWidgetItem,
-                               QColorDialog, QFontDialog, QLineEdit, QFrame, QCheckBox,
-                               QDialogButtonBox, QComboBox, QDoubleSpinBox, QHeaderView,
-                               QTextEdit, QMenu, QStyleFactory, QTabWidget, QSlider)
+from PySide2.QtGui import (QIcon, QPainter, QColor, QPageSize, QPageLayout, QPixmap)
+from PySide2.QtWidgets import (QApplication, QMainWindow, QPushButton, QToolBar, QDockWidget, QHBoxLayout,
+                               QVBoxLayout, QWidget, QLabel, QMessageBox, QInputDialog, QFileDialog, QDialog,
+                               QAction, QColorDialog, QDialogButtonBox, QComboBox, QStyleFactory, QSlider)
 from PySide2.QtPrintSupport import (QPrintDialog, QPrinter, QPrintPreviewDialog)
 
-# Program imports of our modules.
+# Program imports of our modules
 from PaintBrush import PaintBrush
 
 # For the Mac OS
@@ -66,12 +57,11 @@ class appcss:
 
 class ObjectListViewer(QWidget):
     """
-    This is the control for the rendered image.  It takes the geometric data stored in
+    This is the control for the rendered image. It takes the geometric data stored in
     the render list produced in the rendering algorithms and plots it. The default
-    window is [-1,1] with aspect ratio expansion in one direction.  The control
+    window is [-1,1] with aspect ratio expansion in one direction. The control
     also has features for zooming and translation.
     """
-
     def __init__(self, parent=None, ma=None):
         super(ObjectListViewer, self).__init__(parent)
         self.Parent = parent
@@ -89,24 +79,34 @@ class ObjectListViewer(QWidget):
         self.backgroundcolor = QColor()
         self.backgroundcolor.setRgbF(1, 1, 1, 1)
 
-    def SetBackCol(self):
-        self.backgroundcolor = QColorDialog.getColor()
-        self.update()
+    # Opens a color dialog for background color selection and handles selection and rejections
+    def SetBackgroundColor(self):
+        self.colorDialog = QColorDialog(self)
+        self.colorDialog.setOption(QColorDialog.DontUseNativeDialog)  # Use the Qt dialog instead of native
+        self.colorDialog.rejected.connect(self.colorRejected)  # Connect the rejected signal to handler function
+        # User clicked OK, set the selected color to background color and update canvas
+        if (self.colorDialog.exec_() == QColorDialog.Accepted):
+            self.backgroundcolor = self.colorDialog.currentColor()
+            self.update()
 
+    # Handles cancel or close of the color dialog such that no update is made to the canvas
+    def colorRejected(self):
+        self.colorDialog.close()
+    # Reset Canvas center to default
     def resetCenter(self):
         """
         Resets center to the origin.
         """
         self.center = [0, 0]
         self.repaint()
-
+    # Reset Canvas zoom to default
     def resetZoom(self):
         """
         Resets the zoom factor to 1.
         """
         self.zoomfactor = 1
         self.repaint()
-
+    # Reset Canvas zoom and center to default
     def resetCenterAndZoom(self):
         """
         Resets the center to the origin and zoom factor to 1.
@@ -384,7 +384,6 @@ class MusicPainter(QMainWindow):
     """
     Main program application window.
     """
-
     def __init__(self, parent=None):
         super().__init__()
         self.Parent = parent
@@ -393,7 +392,7 @@ class MusicPainter(QMainWindow):
         # self.setStyleSheet('Background-color: grey;')
 
         # About information for the app.
-        self.authors = "Luke Zolenski, Don Spickler, Kyle Tranfaglia, & Timothy McKirgan"
+        self.authors = "Luke Zolenski, Don Spickler & Kyle Tranfaglia"
         self.version = "1.2.1"
         self.program_title = "Music Painter"
         self.copyright = "2023"
@@ -406,7 +405,7 @@ class MusicPainter(QMainWindow):
 
         # Set recording constants
         self.RECORDFORMAT = pyaudio.paInt16
-        self.RECORDCHANNELS = 2
+        self.RECORDCHANNELS = 1
         self.RECORDRATE = 44100
         self.fullrecording = None
 
@@ -527,8 +526,8 @@ class MusicPainter(QMainWindow):
         self.tempIndex1 = self.OutputAudioDevices.currentIndex()
         self.tempIndex2 = self.volumeMultiplier
 
-        self.buttonBox.accepted.connect(self.accept)
-        self.buttonBox.rejected.connect(self.reject)
+        self.buttonBox.accepted.connect(self.audioAccept)
+        self.buttonBox.rejected.connect(self.audioReject)
         self.dlg.setWindowFlag(Qt.WindowContextHelpButtonHint, False)
 
         self.format = QVBoxLayout()
@@ -575,10 +574,10 @@ class MusicPainter(QMainWindow):
         self.dlg.setLayout(self.format)
         self.dlg.exec()
 
-    def accept(self):
+    def audioAccept(self):
         self.dlg.close()
 
-    def reject(self):
+    def audioReject(self):
         self.InputAudioDevices.setCurrentIndex(self.tempIndex)
         self.OutputAudioDevices.setCurrentIndex(self.tempIndex1)
         self.volumeMultiplier = self.tempIndex2
@@ -589,7 +588,7 @@ class MusicPainter(QMainWindow):
         self.canvas = ObjectListViewer(self, self)
         self.setMinimumSize(950, 700)
         self.updateProgramWindowTitle()
-        icon = QIcon(self.resource_path("icons/Logo-blackv2.png"))
+        icon = QIcon(self.resource_path("icons/Logo-Blackv2.png"))
         self.setWindowIcon(icon)
 
         self.clearButton = QPushButton()
@@ -602,7 +601,7 @@ class MusicPainter(QMainWindow):
         self.ColorButton.setStyleSheet('Background-color: #fac8c9')
         self.ColorButton.setText('Background Color')
         # self.ColorButton.setFixedSize(120, 28)
-        self.ColorButton.clicked.connect(self.canvas.SetBackCol)
+        self.ColorButton.clicked.connect(self.canvas.SetBackgroundColor)
 
         self.DirectorySelect = QPushButton()
         self.DirectorySelect.setStyleSheet('Background-color: #f5f0d0')
@@ -774,7 +773,7 @@ class MusicPainter(QMainWindow):
         self.clear_act.setStatusTip("Clear the image.")
 
         self.setColor = QAction("Background Color", self)
-        self.setColor.triggered.connect(self.canvas.SetBackCol)
+        self.setColor.triggered.connect(self.canvas.SetBackgroundColor)
         self.setColor.setStatusTip("Choose background color for image.")
 
         self.dir_open_act = QAction("Open Directory", self)
@@ -847,9 +846,9 @@ class MusicPainter(QMainWindow):
         self.help_website_act.triggered.connect(self.openURL)
         self.help_website_act.setStatusTip("Help (Opens External Link)")
 
-        self.website_link = QAction(QIcon(self.resource_path('icons/48x48/help.png')), "&Help Webpage", self)
-        self.website_link.triggered.connect(self.openURL)
-        self.website_link.setStatusTip("Opens Help Page on Music Painter Website")
+        # self.website_link = QAction(QIcon(self.resource_path('icons/48x48/Help.png')), "&Help Webpage", self)
+        # self.website_link.triggered.connect(self.openURL)
+        # self.website_link.setStatusTip("Opens Help Page on Music Painter Website")
 
         # Create the menu bar
         menu_bar = self.menuBar()
@@ -885,7 +884,7 @@ class MusicPainter(QMainWindow):
 
         help_menu = menu_bar.addMenu('&Help')
         help_menu.addAction(self.help_about_act)
-        help_menu.addAction(self.website_link)
+        help_menu.addAction(self.help_website_act)
 
     def createSecondaryToolBar(self):
 
@@ -1205,7 +1204,7 @@ class MusicPainter(QMainWindow):
             # frame = np.stack((numpydata[::2], numpydata[1::2]), axis=0)
             # frame = []
             # for i in range(self.RECORDCHANNELS):
-            #     frame.append(numpydata[i::2])
+            # frame.append(numpydata[i::2])
 
             channelFreqs = []
             CorSpect = 0
