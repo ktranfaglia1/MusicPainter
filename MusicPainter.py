@@ -92,41 +92,31 @@ class ObjectListViewer(QWidget):
     # Handles cancel or close of the color dialog such that no update is made to the canvas
     def colorRejected(self):
         self.colorDialog.close()
+
     # Reset Canvas center to default
     def resetCenter(self):
-        """
-        Resets center to the origin.
-        """
         self.center = [0, 0]
         self.repaint()
+
     # Reset Canvas zoom to default
     def resetZoom(self):
-        """
-        Resets the zoom factor to 1.
-        """
         self.zoomfactor = 1
         self.repaint()
+
     # Reset Canvas zoom and center to default
     def resetCenterAndZoom(self):
-        """
-        Resets the center to the origin and zoom factor to 1.
-        """
         self.center = [0, 0]
         self.zoomfactor = 1
         self.repaint()
 
+    # On a mouse down event on the left button, track its state
     def mousePressEvent(self, e):
-        """
-        On a mouse down event on the left button, track its state.
-        """
         self.mousePosition = QPoint(e.x(), e.y())
         if e.button() == Qt.LeftButton:
             self.mouseDown = True
 
+    # On a mouse wheel event update the zoom factor
     def wheelEvent(self, e) -> None:
-        """
-        On a mouse wheel event update the zoom factor.
-        """
         self.zoomfactor *= (1 + e.delta() / 5000)
         if self.zoomfactor < 1:
             self.zoomfactor = 1
@@ -134,17 +124,12 @@ class ObjectListViewer(QWidget):
             self.zoomfactor = 1000
         self.repaint()
 
+    # On a mouse up event track its state
     def mouseReleaseEvent(self, e):
-        """
-        On a mouse up event track its state.
-        """
         self.mouseDown = False
 
+    # On a mouse move event, update the zoom factor if the control key is down, otherwise translate
     def mouseMoveEvent(self, e):
-        """
-        On a mouse move event update the zoom factor if the control key is down
-        and translate if the control key is not down.
-        """
         lastmouseposition = self.mousePosition
         self.mousePosition = QPoint(e.x(), e.y())
 
@@ -166,10 +151,8 @@ class ObjectListViewer(QWidget):
                 self.center[1] += (self.mousePosition.y() - lastmouseposition.y()) * yr / self.height()
                 self.repaint()
 
+    # Covert real coordinates to screen coordinates.
     def XYtoQPoint(self, x, y):
-        """
-        Covert real coordinates to screen coordinates.
-        """
         xr = self.screen[1] - self.screen[0]
         yr = self.screen[3] - self.screen[2]
         # ptx = x / xr * self.width() + self.width() / 2
@@ -178,10 +161,8 @@ class ObjectListViewer(QWidget):
         pty = (self.center[1] - y) / yr * self.height() + self.height() / 2
         return QPoint(ptx, pty)
 
+    # Update the screen bounds based on the center and zoom factor being used
     def updateScreenBounds(self):
-        """
-        Update the screen bounds based on the center and zoom factor being used.
-        """
         fullscreen = [-1, 1, -1, 1]
         ww = self.width()
         wh = self.height()
@@ -196,27 +177,21 @@ class ObjectListViewer(QWidget):
         self.screen[2] = self.center[1] - fullscreen[3]
         self.screen[3] = self.center[1] + fullscreen[3]
 
+    # Draw a point to the screen
     def RenderPoint(self, qp, obj):
-        """
-        Draw a point to the screen.
-        """
         qp.setPen(obj[3])
         qp.drawPoint(self.XYtoQPoint(obj[1], obj[2]))
 
+    # Draw a line to the screen
     def RenderLine(self, qp, obj):
-        """
-        Draw a line to the screen.
-        """
         qp.setPen(obj[5])
         pt1 = self.XYtoQPoint(obj[1], obj[2])
         pt2 = self.XYtoQPoint(obj[3], obj[4])
         line = QLine(pt1, pt2)
         qp.drawLine(line)
 
+    # Draw a circle to the screen
     def RenderCircle(self, qp, obj):
-        """
-        Draw a circle to the screen.
-        """
         qp.setPen(obj[5])
         ulpt = self.XYtoQPoint(obj[1] - obj[3], obj[2] + obj[3])
         lrpt = self.XYtoQPoint(obj[1] + obj[3], obj[2] - obj[3])
@@ -229,10 +204,8 @@ class ObjectListViewer(QWidget):
         else:
             qp.drawEllipse(rect)
 
+    # Draw a rectangle to the screen
     def RendeRectangle(self, qp, obj):
-        """
-        Draw a rectangle to the screen.
-        """
         qp.setPen(obj[6])
         ulpt = self.XYtoQPoint(obj[1], obj[2])
         lrpt = self.XYtoQPoint(obj[3], obj[4])
@@ -243,6 +216,7 @@ class ObjectListViewer(QWidget):
         else:
             qp.drawRect(rect)
 
+    # Dra a triangle to the screen
     def RenderTriangle(self, qp, obj):
         if obj[7]:
             self.RiemannFill(qp, obj)
@@ -255,8 +229,9 @@ class ObjectListViewer(QWidget):
             self.RenderLine(qp, obj2)
             self.RenderLine(qp, obj3)
 
+    # Fill a triangle with a Riemann filling algorithm
     def RiemannFill(self, qp, obj):
-        Resolution = 250
+        RESOLUTION = 250
         Range = abs(obj[1] - obj[5])
         MidPoint = obj[3]
         MidPointY = obj[4]
@@ -299,8 +274,8 @@ class ObjectListViewer(QWidget):
                         BegPointY = obj[4]
                         EndPoint = obj[5]
                         EndPointY = obj[6]
-        width = Range / Resolution
-        for i in range(Resolution):
+        width = Range / RESOLUTION
+        for i in range(RESOLUTION):
             StartingX = BegPoint + (i * width)
             EndingX = BegPoint + ((i + 1) * width)
             if EndPoint == MidPoint:
@@ -320,11 +295,8 @@ class ObjectListViewer(QWidget):
             objFill = [3, StartingX, StartingY, EndingX, EndingY, True, obj[8]]
             self.RendeRectangle(qp, objFill)
 
+    # Paint event override: clears the screen, loops through the render list of objects & draws a border around the image
     def paintEvent(self, event):
-        """
-        Paint event override, clears the screen, loops through the render list of
-        objects, and draws a border around the image.
-        """
         self.updateScreenBounds()
         rl = self.mainapp.rl
 
@@ -357,7 +329,6 @@ class ObjectListViewer(QWidget):
         qp.drawRect(0, 0, self.width() - 1, self.height() - 1)
         qp.end()
         self.lastRenderListSize = rl.length()
-
 
 class RenderList:
     """
@@ -422,21 +393,17 @@ class MusicPainter(QMainWindow):
         self.initializeUI()
         self.volumeMultiplier = 0.5
         self.chooseAudioDevice()
-        # self.createLeftToolBar()
 
-        # Set Animation blink flag and timer
+        # Set flags and timer
         self.flag = True
         self.timer = QTimer(self, interval=1000)
         self.timer.timeout.connect(self.AnimateRecordButton)
-        # self.timer1Flag = False
-        # self.timer1 = QTimer(self, interval=500)
-        # self.timer1.timeout.connect(self.setFlag)
         self.algorithmFlag = True
 
     # https://gist.github.com/peace098beat/db8ef7161508e6500ebe
     # Author: Terraskull
     # Last Updated: 11/27/2020
-
+    # Drag file or directory event
     def dragEnterEvent(self, event):
         if event.mimeData().hasUrls():
             event.accept()
@@ -446,7 +413,7 @@ class MusicPainter(QMainWindow):
     # https://gist.github.com/peace098beat/db8ef7161508e6500ebe
     # Author: Terraskull
     # Last Updated: 11/27/2020
-
+    # Drop file or directory to screen event
     def dropEvent(self, event):
         mp3FileDetected = False
         NoFilesLoaded = True
@@ -490,13 +457,13 @@ class MusicPainter(QMainWindow):
     def openURL(self):
         webbrowser.open('https://musicpainterwebsite2023.on.drv.tw/musicpainter/Help.html')
 
-    # Adjoin a relative path for icons and help system.
+    # Adjoin a relative path for icons and help system
     def resource_path(self, relative_path):
         if hasattr(sys, '_MEIPASS'):
             return os.path.join(sys._MEIPASS, relative_path)
         return os.path.join(os.path.abspath("."), relative_path)
 
-    # Updates the title bar to contain the loaded file path or test.
+    # Updates the title bar to contain the loaded file path or test
     def updateProgramWindowTitle(self):
         title = self.program_title
         if self.titleoverridetext != "":
@@ -513,26 +480,28 @@ class MusicPainter(QMainWindow):
         else:
             self.loadedFilename = ""
 
+    # Opens a dialog box to display sound settings: Prompts adjustment of sound volume and select input & output devices
     def chooseAudioDevice(self):
+        # Dialog box creation
         self.dlg = QDialog(self)
         self.dlg.setFixedSize(450,300)
         self.dlg.setWindowTitle("Choose an Audio Input Device")
-
+        # Create buttons
         self.buttonBox = QDialogButtonBox()
         self.buttonBox.addButton("Apply",QDialogButtonBox.AcceptRole)
         self.buttonBox.addButton("Cancel",QDialogButtonBox.RejectRole)
-
+        # Create and store temporary variables in event of reject
         self.tempIndex = self.InputAudioDevices.currentIndex()
         self.tempIndex1 = self.OutputAudioDevices.currentIndex()
         self.tempIndex2 = self.volumeMultiplier
-
+        # Set behavior for reject and accept and remove default help button
         self.buttonBox.accepted.connect(self.audioAccept)
         self.buttonBox.rejected.connect(self.audioReject)
         self.dlg.setWindowFlag(Qt.WindowContextHelpButtonHint, False)
-
+        # Create formatting
         self.format = QVBoxLayout()
         self.format.addStretch()
-
+        # Create Labels
         label1 = QLabel("Input Audio Devices: ")
         label1.setStyleSheet("font-size: 9pt;")
         label2 = QLabel("No Audio Input Devices Detected")
@@ -541,7 +510,7 @@ class MusicPainter(QMainWindow):
         label3.setStyleSheet("font-size: 9pt;")
         label4 = QLabel("No Audio Output Devices Detected")
         label4.setStyleSheet("font-size: 9pt; font-weight: bold")
-
+        # Check if any input or output devices are found and adjust formatting with list of devices
         if (self.inputDeviceCount > 0):
             self.format.addWidget(label1, alignment=Qt.AlignCenter)
             self.format.addWidget(self.InputAudioDevices, alignment=Qt.AlignCenter)
@@ -555,18 +524,18 @@ class MusicPainter(QMainWindow):
             self.format.addWidget(self.OutputAudioDevices, alignment=Qt.AlignCenter)
         else:
             self.format.addWidget(label4, alignment=Qt.AlignCenter)
-
+        # Set up volume slider
         self.volumeLabel = QLabel(f'Volume: {int(self.volumeMultiplier * 100)}%', self)
         self.volumeSlider = QSlider(Qt.Horizontal, self)
         self.volumeSlider.setMinimum(0)
         self.volumeSlider.setMaximum(100)
         self.volumeSlider.setValue(self.volumeMultiplier * 100)
         self.volumeSlider.valueChanged.connect(self.changeVolume)
-
+        # Add volume slider
         self.format.addSpacing(25)
         self.format.addWidget(self.volumeLabel)
         self.format.addWidget(self.volumeSlider)
-
+        # Add buttons
         self.format.addStretch()
         self.format.addSpacing(10)
         self.format.addWidget(self.buttonBox)
@@ -574,9 +543,11 @@ class MusicPainter(QMainWindow):
         self.dlg.setLayout(self.format)
         self.dlg.exec()
 
+    # Handles accept role for audio device dialog box
     def audioAccept(self):
         self.dlg.close()
 
+    # Handles reject role for audio device dialog box
     def audioReject(self):
         self.InputAudioDevices.setCurrentIndex(self.tempIndex)
         self.OutputAudioDevices.setCurrentIndex(self.tempIndex1)
@@ -585,41 +556,35 @@ class MusicPainter(QMainWindow):
 
     # Initialize the window, calls create methods to set up the GUI.
     def initializeUI(self):
+        # Initialize main window
         self.canvas = ObjectListViewer(self, self)
         self.setMinimumSize(950, 700)
         self.updateProgramWindowTitle()
         icon = QIcon(self.resource_path("icons/Logo-Blackv2.png"))
         self.setWindowIcon(icon)
-
+        # Set up clear button
         self.clearButton = QPushButton()
         self.clearButton.setStyleSheet('Background-color: #d1e7f0')
         self.clearButton.setText('Clear Image')
-        # self.clearButton.setFixedSize(90, 28)
         self.clearButton.clicked.connect(self.clearImage)
-
+        # Set up background color button
         self.ColorButton = QPushButton()
         self.ColorButton.setStyleSheet('Background-color: #fac8c9')
         self.ColorButton.setText('Background Color')
-        # self.ColorButton.setFixedSize(120, 28)
         self.ColorButton.clicked.connect(self.canvas.SetBackgroundColor)
-
+        # Set up directory selector
         self.DirectorySelect = QPushButton()
         self.DirectorySelect.setStyleSheet('Background-color: #f5f0d0')
         self.DirectorySelect.setText('Open Directory')
-        # self.DirectorySelect.setFixedSize(100, 28)
         self.DirectorySelect.clicked.connect(self.openDirectory)
-
+        # Create loaded file dropdown list
         self.ChosenFile = QComboBox()
-        # self.ChosenFile.setFixedSize(90, 28)
         for i in range(len(self.loadedFiles)):
             self.ChosenFile.addItem(self.loadedFiles[i])
 
         self.ChosenFile.currentIndexChanged.connect(self.SetFile)
-
+        # Create algorithm dropdown list
         self.algorithmNum = QComboBox()
-        # self.algorithmNum.setFixedSize(130, 28)
-        # for i in range(self.paintbrush.numberAlgorithms):
-        #     self.algorithmNum.addItem(str(i + 1))
 
         self.algorithmNum.addItem(str('Frequency Dots'))
         self.algorithmNum.addItem(str('Dynamite'))
@@ -636,26 +601,25 @@ class MusicPainter(QMainWindow):
         self.algorithmNum.addItem(str('Emotional Progression'))
 
         self.algorithmNum.currentIndexChanged.connect(self.resetRLData)
-
+        # Set up chunk size list
         self.ChunkSizesList = [1024, 2048, 4096, 8192, 16384, 32768, 65536, 131072]
         self.chunkSize = QComboBox()
-        # self.chunkSize.setFixedSize(130, 28)
         for val in self.ChunkSizesList:
             self.chunkSize.addItem(str(val))
         self.chunkSize.setCurrentIndex(4)
-
+        # Get host audio device information: device count
         p = pyaudio.PyAudio()
         info = p.get_host_api_info_by_index(0)
         numdevices = info.get('deviceCount')
-
+        # Create and initialize input audio devices list
         self.InputAudioDevices = QComboBox()
         self.InputAudioDevices.setFixedSize(260, 30)
         self.inputDeviceCount = 0
-
+        # Create and initialize output audio devices list
         self.OutputAudioDevices = QComboBox()
         self.OutputAudioDevices.setFixedSize(260, 30)
         self.outputDeviceCount = 0
-
+        # Get all input and output devices and append them to a list (output list and input list)
         for i in range(0, numdevices):
             if (p.get_device_info_by_host_api_device_index(0, i).get('maxInputChannels')) > 0:
                 self.InputAudioDevices.addItem(str(p.get_device_info_by_host_api_device_index(0, i).get('name')))
@@ -663,15 +627,12 @@ class MusicPainter(QMainWindow):
             if (p.get_device_info_by_host_api_device_index(0, i).get('maxOutputChannels')) > 0:
                 self.OutputAudioDevices.addItem(str(p.get_device_info_by_host_api_device_index(0, i).get('name')))
                 self.outputDeviceCount += 1
-
+        # Create menu and toolbars
         self.createMenu()
         self.createToolBar()
         self.createSecondaryToolBar()
-
-        # self.statusBar = QStatusBar()
-        # self.setStatusBar(self.statusBar)
+        # Add the Dock area and canvas
         self.addDockWidget(Qt.TopDockWidgetArea, self.leftWidget)
-
         self.setCentralWidget(self.canvas)
         self.show()
 
@@ -889,7 +850,8 @@ class MusicPainter(QMainWindow):
     def createSecondaryToolBar(self):
 
         self.leftWidget = QDockWidget()
-        self.leftWidget.setStyleSheet("QDockWidget::title" "{" "background : lightblue;" "}")
+        self.leftWidget.setWindowTitle(" ")
+        self.leftWidget.setStyleSheet("QDockWidget::title""{" "background : lightblue;" "}")
         self.leftWidget.setFeatures(self.leftWidget.DockWidgetFloatable | self.leftWidget.DockWidgetMovable)
 
         layoutWidget = QWidget()
