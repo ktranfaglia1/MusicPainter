@@ -632,11 +632,13 @@ class MusicPainter(QMainWindow):
         self.createToolBar()
         self.createSecondaryToolBar()
         # Add the Dock area and canvas
-        self.addDockWidget(Qt.TopDockWidgetArea, self.leftWidget)
+        self.addDockWidget(Qt.TopDockWidgetArea, self.toolBarWidget)
         self.setCentralWidget(self.canvas)
         self.show()
 
+    # Resets temporary variables for algorithm calculations upon each algorithm index change: Calls PaintBrush function
     def resetRLData(self):
+        # Assesses current index and calls corresponding PaintBrush function to reset the data variable list
         if (self.algorithmNum.currentIndex() == 5):
             self.paintbrush.SetAlg6()
         elif (self.algorithmNum.currentIndex() == 1 or self.algorithmNum.currentIndex() == 2 or self.algorithmNum.currentIndex() == 3
@@ -653,17 +655,21 @@ class MusicPainter(QMainWindow):
         elif (self.algorithmNum.currentIndex() == 12):
             self.paintbrush.SetAlg13()
 
-        current = self.chunkSize.currentIndex()
-
+        current = self.chunkSize.currentIndex()  # Update current index variable
+        # Check algorithm index and set chunk size list: If triangle algorithm, limit chunk size list
         if ((self.algorithmNum.currentIndex() == 5) or (self.algorithmNum.currentIndex() == 8)):
+            # Check if chunk size list has changed by assessing the first list value
             if self.ChunkSizesList[0] == 1024:
                 ListChanged = True
             else:
                 ListChanged = False
+            # Setup new chunk size list
             self.ChunkSizesList = [16384, 32768, 65536, 131072]
             self.chunkSize.clear()
+            # Fill chunk size list with all possible chunk sizes for the algorithm
             for val in self.ChunkSizesList:
                 self.chunkSize.addItem(str(val))
+            # Adjust the current index to a chunk size in the new list range if not already
             if ListChanged:
                 if current >= 5 and current <= 7:
                     self.chunkSize.setCurrentIndex(current - 4)
@@ -671,15 +677,20 @@ class MusicPainter(QMainWindow):
                     self.chunkSize.setCurrentIndex(0)
             else:
                 self.chunkSize.setCurrentIndex(current)
+        # Non-triangle algorithm case
         else:
+            # Check if chunk size list has changed by assessing the first list value
             if self.ChunkSizesList[0] == 16384:
                 ListChanged = True
             else:
                 ListChanged = False
+            # Setup new chunk size list
             self.ChunkSizesList = [1024, 2048, 4096, 8192, 16384, 32768, 65536, 131072]
             self.chunkSize.clear()
+            # Fill chunk size list with all possible chunk sizes for the algorithm
             for val in self.ChunkSizesList:
                 self.chunkSize.addItem(str(val))
+            # Adjust the current index to a chunk size in the new list range if not already
             if ListChanged:
                 if current >= 1 and current <= 3:
                     self.chunkSize.setCurrentIndex(current + 4)
@@ -688,23 +699,21 @@ class MusicPainter(QMainWindow):
             else:
                 self.chunkSize.setCurrentIndex(current)
 
-    # Setup all menu and toolbar actions as well as create the menu.
+    # Setup all menu and toolbar actions as well as create the menu
     def createMenu(self):
+        # Setup all toolbar actions by setting an icon, possibly a shortcut, an action upon trigger, and a status tip
         self.file_open_act = QAction(QIcon(self.resource_path('icons/48x48/OpenFile.png')), "&Open Wav File...", self)
-        # self.file_open_act = QAction(QIcon(self.resource_path('OpenFile.png')), "&Open Wav File...", self)
         self.file_open_act.setShortcut('Ctrl+O')
         self.file_open_act.triggered.connect(self.openFile)
         self.file_open_act.setStatusTip("Open a wav file for rendering.")
 
         self.printImage_act = QAction(QIcon(self.resource_path('icons/48x48/Printer.png')), "&Print...", self)
-        # self.printImage_act = QAction(QIcon(self.resource_path('Printer.png')), "&Print...", self)
         self.printImage_act.setShortcut('Ctrl+P')
         self.printImage_act.triggered.connect(self.printImage)
         self.printImage_act.setStatusTip("Print the image.")
 
         self.printPreviewImage_act = QAction(QIcon(self.resource_path('icons/48x48/Printer-View.png')),
                                              "Print Pre&view...", self)
-        # self.printPreviewImage_act = QAction(QIcon(self.resource_path('Printer-View.png')), "Print Pre&view...", self)
         self.printPreviewImage_act.triggered.connect(self.printPreviewImage)
         self.printPreviewImage_act.setStatusTip("Print preview the image.")
 
@@ -713,19 +722,16 @@ class MusicPainter(QMainWindow):
         quit_act.setStatusTip("Shut down the application.")
 
         self.copyImage_act = QAction(QIcon(self.resource_path('icons/48x48/Copy.png')), "Copy &Image", self)
-        # self.copyImage_act = QAction(QIcon(self.resource_path('Copy.png')), "Copy &Image", self)
         self.copyImage_act.setShortcut('Ctrl+C')
         self.copyImage_act.triggered.connect(self.copyImageToClipboard)
         self.copyImage_act.setStatusTip("Copy the image to the clipboard.")
 
         self.saveImage_act = QAction(QIcon(self.resource_path('icons/48x48/Download-Blue.png')), "Save Image &As...",
                                      self)
-        # self.saveImage_act = QAction(QIcon(self.resource_path('Download-Blue.png')), "Save Image &As...", self)
         self.saveImage_act.triggered.connect(self.saveAsImage)
         self.saveImage_act.setStatusTip("Save the image.")
 
         self.render_act = QAction(QIcon(self.resource_path('icons/48x48/Brush-Purple.png')), "&Render", self)
-        # self.render_act = QAction(QIcon(self.resource_path('Brush-Purple.png')), "&Render", self)
         self.render_act.triggered.connect(self.renderImage)
         self.render_act.setStatusTip("Render the image.")
 
@@ -742,74 +748,58 @@ class MusicPainter(QMainWindow):
         self.dir_open_act.setStatusTip("Open directory containing .wav files.")
 
         self.resetCenter_act = QAction(QIcon(self.resource_path('icons/48x48/Center.png')), "Reset Center", self)
-        # self.resetCenter_act = QAction(QIcon(self.resource_path('Center.png')), "Reset Center", self)
         self.resetCenter_act.triggered.connect(self.canvas.resetCenter)
         self.resetCenter_act.setStatusTip("Reset the center to the origin.")
 
         self.resetZoom_act = QAction(QIcon(self.resource_path('icons/48x48/Zoom.png')), "Reset Zoom", self)
-        # self.resetZoom_act = QAction(QIcon(self.resource_path('Zoom.png')), "Reset Zoom", self)
         self.resetZoom_act.triggered.connect(self.canvas.resetZoom)
         self.resetZoom_act.setStatusTip("Reset the zoom factor to 1.")
 
         self.resetCenterZoom_act = QAction(QIcon(self.resource_path('icons/48x48/ZoomCenter.png')),
                                            "Reset Center and Zoom", self)
-        # self.resetCenterZoom_act = QAction(QIcon(self.resource_path('ZoomCenter.png')), "Reset Center and Zoom", self)
         self.resetCenterZoom_act.triggered.connect(self.canvas.resetCenterAndZoom)
         self.resetCenterZoom_act.setStatusTip("Reset the center to the origin and zoom factor to 1.")
 
         self.properties_act = QAction(QIcon(self.resource_path('icons/48x48/InfoCard.png')), "File &Information...",
                                       self)
-        # self.properties_act = QAction(QIcon(self.resource_path('InfoCard.png')), "File &Information...",self)
         self.properties_act.triggered.connect(self.SoundDataProperties)
         self.properties_act.setStatusTip("View the wav file information.")
 
         self.play_act = QAction(QIcon(self.resource_path('icons/48x48/Play.png')), "Render and &Play", self)
-        # self.play_act = QAction(QIcon(self.resource_path('Play.png')), "Render and &Play", self)
         self.play_act.triggered.connect(self.PlaySoundData)
         self.play_act.setStatusTip("Render the image while playing the wav file.")
 
         self.stop_act = QAction(QIcon(self.resource_path('icons/48x48/Stop-Center.png')), "&Stop Render", self)
-        # self.stop_act = QAction(QIcon(self.resource_path('Stop-Center.png')), "&Stop Render", self)
         self.stop_act.triggered.connect(self.StopSoundData)
         self.stop_act.setStatusTip("Stop the rendering of the image.")
 
         self.selectaudiodevice_act = QAction(QIcon(self.resource_path('icons/48x48/Microphone.png')),
                                              "&Choose Audio Device", self)
-        # self.record_act = QAction(QIcon(self.resource_path('Record.png')), "&Record", self)
         self.selectaudiodevice_act.triggered.connect(self.chooseAudioDevice)
         self.selectaudiodevice_act.setStatusTip("Choose an audio input device for recording.")
 
         self.record_act = QAction(QIcon(self.resource_path('icons/48x48/Record.png')), "&Record", self)
-        # self.record_act = QAction(QIcon(self.resource_path('Record.png')), "&Record", self)
         self.record_act.triggered.connect(self.RecordSoundData)
         self.record_act.setStatusTip("Record sound and render image.")
 
         self.saverecording_act = QAction(QIcon(self.resource_path('icons/48x48/Download.png')), "&Save Recording", self)
-        # self.saverecording_act = QAction(QIcon(self.resource_path('Download.png')), "&Save Recording", self)
         self.saverecording_act.triggered.connect(self.SaveRecording)
         self.saverecording_act.setStatusTip("Save recorded sound to wav file.")
 
         self.stoprecord_act = QAction(QIcon(self.resource_path('icons/48x48/Pause.png')), "&Stop Recording", self)
-        # self.stoprecord_act = QAction(QIcon(self.resource_path('Pause.png')), "&Stop Recording", self)
         self.stoprecord_act.triggered.connect(self.StopRecordData)
         self.stoprecord_act.setStatusTip("Stop recording.")
 
         selectTheme_act = QAction("&Theme...", self)
         selectTheme_act.triggered.connect(self.SelectTheme)
 
-        # Create help menu actions
         self.help_about_act = QAction(QIcon(self.resource_path('icons/48x48/Information.png')), "&About...", self)
-        # self.help_about_act = QAction(QIcon(self.resource_path('Information.png')), "&About...", self)
         self.help_about_act.triggered.connect(self.aboutDialog)
         self.help_about_act.setStatusTip("Information about the program.")
 
         self.help_website_act = QAction(QIcon(self.resource_path('icons/48x48/Help.png')), "&Help", self)
         self.help_website_act.triggered.connect(self.openURL)
         self.help_website_act.setStatusTip("Help (Opens External Link)")
-
-        # self.website_link = QAction(QIcon(self.resource_path('icons/48x48/Help.png')), "&Help Webpage", self)
-        # self.website_link.triggered.connect(self.openURL)
-        # self.website_link.setStatusTip("Opens Help Page on Music Painter Website")
 
         # Create the menu bar
         menu_bar = self.menuBar()
@@ -825,12 +815,14 @@ class MusicPainter(QMainWindow):
         file_menu.addSeparator()
         file_menu.addAction(quit_act)
 
+        # Create record menu and add actions
         record_menu = menu_bar.addMenu('&Record')
         record_menu.addAction(self.selectaudiodevice_act)
         record_menu.addAction(self.record_act)
         record_menu.addAction(self.stoprecord_act)
         record_menu.addAction(self.saverecording_act)
 
+        # Create image menu and add actions
         image_menu = menu_bar.addMenu('&Image')
         image_menu.addAction(self.copyImage_act)
         image_menu.addAction(self.saveImage_act)
@@ -843,20 +835,22 @@ class MusicPainter(QMainWindow):
         image_menu.addAction(self.resetCenterZoom_act)
         image_menu.addSeparator()
 
+        # Create help menu and add actions
         help_menu = menu_bar.addMenu('&Help')
         help_menu.addAction(self.help_about_act)
         help_menu.addAction(self.help_website_act)
 
+    # Create and set up the secondary toolbar
     def createSecondaryToolBar(self):
-
-        self.leftWidget = QDockWidget()
-        self.leftWidget.setWindowTitle(" ")
-        self.leftWidget.setStyleSheet("QDockWidget::title""{" "background : lightblue;" "}")
-        self.leftWidget.setFeatures(self.leftWidget.DockWidgetFloatable | self.leftWidget.DockWidgetMovable)
-
+        # Create and set up docking widget for toolbar
+        self.toolBarWidget = QDockWidget()
+        self.toolBarWidget.setWindowTitle(" ")
+        self.toolBarWidget.setStyleSheet("QDockWidget::title""{" "background : lightblue;" "}")
+        self.toolBarWidget.setFeatures(self.toolBarWidget.DockWidgetFloatable | self.toolBarWidget.DockWidgetMovable)
+        # Create layout for toolbar
         layoutWidget = QWidget()
         layout = QHBoxLayout()
-
+        # Set up the layout: Add all widgets and format
         layout.addStretch()
         layout.addWidget(self.clearButton, 0, Qt.AlignRight)
         layout.addWidget(QLabel("Algorithm:"), 0, Qt.AlignRight)
@@ -869,59 +863,59 @@ class MusicPainter(QMainWindow):
         layout.addWidget(self.ColorButton, 0, Qt.AlignLeft)
         layout.addStretch()
 
-        layoutWidget.setLayout(layout)
+        layoutWidget.setLayout(layout)  # Set the layout
+        # Instate the layout to the toolbar and set docking bounds
+        self.toolBarWidget.setWidget(layoutWidget)
+        self.toolBarWidget.setAllowedAreas(Qt.TopDockWidgetArea | Qt.BottomDockWidgetArea)
 
-        self.leftWidget.setWidget(layoutWidget)
-        self.leftWidget.setAllowedAreas(Qt.TopDockWidgetArea | Qt.BottomDockWidgetArea)
-
-    # Set up toolbar
+    # Create and set up primary toolbar
     def createToolBar(self):
+        # Create and initialize toolbar
         tool_bar = QToolBar("Main Toolbar")
         tool_bar.setStyleSheet("QToolBar{spacing:7px;}")
-        # tool_bar.setIconSize(QSize(20, 20))
         tool_bar.setIconSize(tool_bar.iconSize())
-
         self.addToolBar(tool_bar)
-
+        # Add file and render actions
         tool_bar.addAction(self.file_open_act)
         tool_bar.addAction(self.render_act)
         tool_bar.addAction(self.play_act)
         tool_bar.addAction(self.stop_act)
         tool_bar.addSeparator()
+        # Add audio and record actions
         tool_bar.addAction(self.selectaudiodevice_act)
         tool_bar.addAction(self.record_act)
         tool_bar.addAction(self.stoprecord_act)
         tool_bar.addAction(self.saverecording_act)
-
         tool_bar.addSeparator()
+        # Add image actions
         tool_bar.addAction(self.copyImage_act)
         tool_bar.addAction(self.saveImage_act)
         tool_bar.addAction(self.printImage_act)
         tool_bar.addAction(self.printPreviewImage_act)
         tool_bar.addSeparator()
+        # Add help and information actions
         tool_bar.addAction(self.help_website_act)
         tool_bar.addAction(self.help_about_act)
         tool_bar.addSeparator()
 
-    # Display information about program dialog box.
+    # Display information about program as a dialog box
     def aboutDialog(self):
+        # Set message box
         QMessageBox.about(self, self.program_title + "  Version " + self.version,
                           self.authors + "\nVersion " + self.version +
                           "\nCopyright " + self.copyright +
                           "\nDeveloped in Python using the \nPySide, SciPy, and PyAudio toolsets.")
 
-    # def setStatusText(self, text):
-    #     self.statusBar.showMessage(text)
-
     # Theme setter, not currently being used in the program.
     def SelectTheme(self):
-        items = QStyleFactory.keys()
+        items = QStyleFactory.keys()  # Get themes
+        # If one theme or less, return
         if len(items) <= 1:
             return
-
+        # Sort themes and create an input dialogue to list the themes for selection
         items.sort()
         item, ok = QInputDialog.getItem(self, "Select Theme", "Available Themes", items, 0, False)
-
+        # If a theme is selected, set theme
         if ok:
             self.Parent.setStyle(item)
 
@@ -933,12 +927,15 @@ class MusicPainter(QMainWindow):
 
     # Returns the dominate frequency from a spectrum and frequency list.
     def getMaxFreq(self, spec, freq):
+        # Check if spec and freq data exists (non zero)
         if len(spec) == 0 or len(freq) == 0:
             return 0
-
+        # Initialize max values
         maxfreq = freq[0]
         maxspec = spec[0]
+        # Loop through spec list
         for j in range(len(spec)):
+            # If spec at index is greater than max, set new max spec at index and max freq at corresponding index
             if spec[j] > maxspec:
                 maxspec = spec[j]
                 maxfreq = freq[j]
@@ -947,30 +944,27 @@ class MusicPainter(QMainWindow):
 
     # Executed in a separate thread.  Reads in the wav file, precomputes the frequencies
     # for the entire file, depending on the mode will either render the data all at once
-    # with the current algorithm and chunk size or it will render while the file is being
-    # played.
+    # with the current algorithm and chunk size, or it will render while the file is played
     def dotheplay(self, playmusic):
+        # Set chunk and current algorithm
         chunk = self.ChunkSizesList[self.chunkSize.currentIndex()]
         self.paintbrush.currentAlgorithm = self.algorithmNum.currentIndex() + 1
 
-        samplingfreq, sound = wavfile.read(self.loadedFilename)
-
+        samplingfreq, sound = wavfile.read(self.loadedFilename)  # Read loaded file
+        channelData = []
+        # Get channel count, then set channels, initialize samples, and append sound to channel data list
         if (len(sound.shape) > 1):
             channels = sound.shape[1]
             samples = sound.shape[0]
-        else:
-            channels = 1
-            samples = sound.shape[0]
-
-        channelData = []
-
-        if (len(sound.shape) > 1):
             for i in range(channels):
                 channelData.append(sound[:, i])
         else:
+            channels = 1
+            samples = sound.shape[0]
             channelData.append(sound)
 
         channelChunks = []
+        # Use chunk size to slice the channel data while there is data to slice
         for i in range(channels):
             soundslices = []
             start = 0
@@ -979,111 +973,94 @@ class MusicPainter(QMainWindow):
                 start += chunk
             channelChunks.append(soundslices)
 
+        # Set up pyAudio stream: open file, set sampling frequency, set samples, calculate play time, prepare stream
         af = wave.open(self.loadedFilename, 'rb')
         samplingfreq = af.getframerate()
         samples = af.getnframes()
         self.musictime = samples / samplingfreq
         pa = pyaudio.PyAudio()
+        # Get output device information for selected device: If input and output channels match (no conflicts), proceed
         output_device_info = pa.get_device_info_by_index(self.OutputAudioDevices.currentIndex())
         if (output_device_info['maxOutputChannels'] == af.getnchannels()):
+            # Create audio stream using selected output device
             stream = pa.open(format=pa.get_format_from_width(af.getsampwidth()),
                              channels=af.getnchannels(),
                              rate=af.getframerate(),
                              output=True,
                              output_device_index=self.OutputAudioDevices.currentIndex())
         else:
+            # Create audio stream without an output device
             stream = pa.open(format=pa.get_format_from_width(af.getsampwidth()),
                              channels=af.getnchannels(),
                              rate=af.getframerate(),
                              output=True)
 
-        self.freqlist = []
+        self.freqList = []
         self.SpectList = []
         freqcap = 8500
 
-        # precompute the frequency data.
-
+        # precompute the frequency data
         for i in range(len(channelChunks[0])):
             channelFreqs = []
             CorSpect = 0
+            # Loop through each channel
             for k in range(channels):
-                spect, freq = self.getSpectrum(channelChunks[k][i], samplingfreq)
-                maxfreq = self.getMaxFreq(spect, freq)
-                channelFreqs.append(maxfreq)
+                spect, freq = self.getSpectrum(channelChunks[k][i], samplingfreq)  # Get spectrum and frequency data
+                maxfreq = self.getMaxFreq(spect, freq)  # Find the maximum frequency in the spectrum
+                channelFreqs.append(maxfreq)  # Append the maximum frequency to the channelFreqs list
 
-            maxfreqch = max(channelFreqs)
-
+            maxfreqch = max(channelFreqs)  # Find the maximum frequency among all channels
+            # Iterate through the frequency list to find the corresponding spectrum value at the overall max frequency
             for i in range(len(channelFreqs)):
                 if channelFreqs[i] == maxfreqch:
                     CorSpect = spect[i]
-
+            # If the maximum frequency exceeds the frequency cap, set list to [0, 0]
             if maxfreqch > freqcap:
                 channelFreqs = [0, 0]
-            self.freqlist.append(channelFreqs)
+            # Append the channelFreqs list and CorSpect to freqList and SpectList respectively
+            self.freqList.append(channelFreqs)
             self.SpectList.append(CorSpect)
             # self.setStatusText("Processing segment "+ str(i+1) + " of " + str(len(channelChunks[0])))
 
-        # rd_data = []
-        # rd_temp = []
-        # if playmusic:
-        #     af.rewind()
-        #     rd_temp = af.readframes(chunk)
-        #     data_np = np.frombuffer(rd_temp, dtype=np.int16)  # Convert the binary data to a NumPy array
-        #     amplified_data_np = (data_np * self.volumeMultiplier).astype(np.int16)  # Amplify the audio data
-        #     rd_data = amplified_data_np.tobytes()  # Convert the amplified NumPy array back to binary data
-
         self.paintbrush.resetlistlinks()
 
-        # intervalTime = self.musictime * 100
-        # print(intervalTime)
-        # self.timer1.setInterval(intervalTime)
-        # self.timer1.start()
-        # print(self.timer1.remainingTime())
-
+        # Loop through the frequency list and draw the corresponding data using the paintbrush
         i = 0
-        while i < len(self.freqlist) and (not self.playsoundstop):
-            if (i == len(self.freqlist) - 1 or i == math.floor(len(self.freqlist) / 9) or i == math.floor(len(self.freqlist) / 8)
-            or i == math.floor(len(self.freqlist) / 7) or i == math.floor(len(self.freqlist) / 6) or i == math.floor(len(self.freqlist) / 5)
-            or i == math.floor(len(self.freqlist) / 4) or i == math.floor(len(self.freqlist) / 3) or i == math.floor(len(self.freqlist) / 2)):
+        while i < len(self.freqList) and (not self.playsoundstop):
+            # Assess if data is at a tenth split position and set a flag
+            if (i == len(self.freqList) - 1 or i == math.floor(len(self.freqList) / 9) or i == math.floor(len(self.freqList) / 8)
+            or i == math.floor(len(self.freqList) / 7) or i == math.floor(len(self.freqList) / 6) or i == math.floor(len(self.freqList) / 5)
+            or i == math.floor(len(self.freqList) / 4) or i == math.floor(len(self.freqList) / 3) or i == math.floor(len(self.freqList) / 2)):
                     self.algorithmFlag = False
             else:
                 self.algorithmFlag = True
-            if i < len(self.freqlist):
-                self.paintbrush.draw(self.freqlist[i], i, self.SpectList[i], self.algorithmFlag)
+            # Draw with the data using paintbrush
+            if i < len(self.freqList):
+                self.paintbrush.draw(self.freqList[i], i, self.SpectList[i], self.algorithmFlag)
                 self.canvas.renderAll = False
                 self.canvas.update()
                 self.canvas.renderAll = True
-
+            # If audio is playing, read and amplify audio data from the wave file
             if playmusic:
-                # stream.write(rd_data)
-                # rd_data = af.readframes(chunk)
                 rd_raw = af.readframes(chunk)  # Read frames from the wave file
                 data_np = np.frombuffer(rd_raw, dtype=np.int16)  # Convert the binary data to a NumPy array
                 amplified_data_np = (data_np * self.volumeMultiplier).astype(np.int16)  # Amplify the audio data
                 rd_data = amplified_data_np.tobytes()  # Convert the amplified NumPy array back to binary data
                 stream.write(rd_data)  # Write the amplified audio data to the stream
-            #     self.setStatusText("")
-            # else:
-            #     self.setStatusText("")
-            # eltime = "%.3f" %  (i * chunk / wavframerate)
-            # self.setStatusText(eltime + " sec.")
-            i += 1
-            # if (not self.timer1Flag):
-            #     self.timer1Flag = True
 
+            i += 1
+        # Close audio stream
         stream.stop_stream()
         stream.close()
         af.close()
         pa.terminate()
-        # self.setStatusText("")
         # Remove Thread
         self.music_thread = None
         self.canvas.update()
 
-        # self.play_act.setEnabled(True)
-
-    # Checks id the file is readable with both scipy and pyaudio
+    # Checks if the file is readable with both scipy and pyaudio
     def checkFile(self):
+        # Checks that a file is loaded in order to assess it
         if self.loadedFilename == '':
             QMessageBox.warning(self, "File Not Opened", "A Wav file needs to opened before rendering.",
                                 QMessageBox.Ok)
@@ -1101,33 +1078,33 @@ class MusicPainter(QMainWindow):
 
         return True
 
-    # Sets the rendering thread to render the entire wav file immediately.
+    # Sets the rendering thread to render the entire wav file immediately
     def renderImage(self):
+        # Check if file is valid and loaded
         if not self.checkFile():
             return
-
+        # Check if there is a music thread
         if not self.music_thread:
             self.music_thread = Thread(target=self.dotheplay, args=(False,), daemon=True)
-            # self.clearImage()
-
+        # Check if music thread is active
         if self.music_thread.is_alive():
             return
-
+        # Start music thread
         self.playsoundstop = False
         self.music_thread.start()
 
-    # Sets the rendering and playing thread to play while rendering.
+    # Sets the rendering and playing thread to play while rendering
     def PlaySoundData(self):
+        # Check if file is valid and loaded
         if not self.checkFile():
             return
-
+        # Check if there is a music thread
         if not self.music_thread:
             self.music_thread = Thread(target=self.dotheplay, args=(True,), daemon=True)
-            # self.clearImage()
-
+        # Check if music thread is active
         if self.music_thread.is_alive():
             return
-
+        # Start music thread
         self.playsoundstop = False
         self.music_thread.start()
 
@@ -1144,9 +1121,10 @@ class MusicPainter(QMainWindow):
     # At the end it will join the frames into a single data file that can be saved to a
     # wav file.
     def dotherecord(self):
+        # Set chunk and current algorithm
         chunk = self.ChunkSizesList[self.chunkSize.currentIndex()]
         self.paintbrush.currentAlgorithm = self.algorithmNum.currentIndex() + 1
-
+        # Create and set up audio stream
         p = pyaudio.PyAudio()
         stream = p.open(format=self.RECORDFORMAT,
                         channels=self.RECORDCHANNELS,
@@ -1154,53 +1132,49 @@ class MusicPainter(QMainWindow):
                         input=True,
                         frames_per_buffer=chunk,
                         input_device_index=self.InputAudioDevices.currentIndex())
-
+        # Declare variables
         frames = []
         self.freqlist = []
         freqcap = 8500
         self.paintbrush.resetlistlinks()
-
+        # Loop as long as sound is not signaled to stop
         while not self.playsoundstop:
-            data = stream.read(chunk)
-            numpydata = np.frombuffer(data, dtype=np.int16)
-            # frame = np.stack((numpydata[::2], numpydata[1::2]), axis=0)
-            # frame = []
-            # for i in range(self.RECORDCHANNELS):
-            # frame.append(numpydata[i::2])
-
+            data = stream.read(chunk)  # Read a chunk of audio data from the stream
+            numpydata = np.frombuffer(data, dtype=np.int16)  # Convert binary data to a NumPy array of 16-bit integers
             channelFreqs = []
             CorSpect = 0
+            # Loop through each recording channel
             for i in range(self.RECORDCHANNELS):
-                # channelData.append(numpydata[:, i])
-                # spect, freq = self.getSpectrum(frame[i], self.RECORDRATE)
+                # Get spectrum and frequency data for the current channel, find max freq in spec, then append max freq
                 spect, freq = self.getSpectrum(numpydata[i::self.RECORDCHANNELS], self.RECORDRATE)
                 maxfreq = self.getMaxFreq(spect, freq)
                 channelFreqs.append(maxfreq)
 
-            maxfreqch = max(channelFreqs)
-
+            maxfreqch = max(channelFreqs)  # Find the maximum frequency among all channels
+            # Iterate through the channelFreqs list to find the corresponding spectrum value
             for i in range(len(channelFreqs)):
                 if channelFreqs[i] == maxfreqch:
                     CorSpect = spect[i]
-
+            # If the maximum frequency exceeds the frequency cap, set channelFreqs to [0, 0]
             if maxfreqch > freqcap:
                 channelFreqs = [0, 0]
-            self.freqlist.append(channelFreqs)
-
+            self.freqlist.append(channelFreqs)  # Append the channelFreqs list to freqlist
+            # Check if channelFreqs list is not empty
             if channelFreqs != [0, 0]:
                 pos = len(self.freqlist) - 1
+                # Check if the position is a multiple of 10 to set the algorithmFlag accordingly
                 if (pos % 10 == 0):
                     self.algorithmFlag = False
                 else:
                     self.algorithmFlag = True
+                # Draw with the data using paintbrush
                 self.paintbrush.draw(self.freqlist[pos], pos, CorSpect, self.algorithmFlag)
                 self.canvas.renderAll = False
                 self.canvas.update()
                 self.canvas.renderAll = True
-                # print(self.freqlist[pos])
 
             frames.append(data)
-
+        # Close audio stream
         stream.stop_stream()
         stream.close()
         p.terminate()
@@ -1208,48 +1182,44 @@ class MusicPainter(QMainWindow):
         self.fullrecording = b''.join(frames)
         self.music_thread = None
 
+    # Adjust output volume using a volume slider
     def changeVolume(self):
-        volumeValue = self.volumeSlider.value()
-        self.volumeLabel.setText(f'Volume: {volumeValue}%')
+        volumeValue = self.volumeSlider.value()  # Get volume slider value
+        self.volumeLabel.setText(f'Volume: {volumeValue}%')  # Update the displayed volume value
+        self.volumeMultiplier = volumeValue / 100.0  # Translate the volume value to a volume multiplier (% to decimal)
 
-        self.volumeMultiplier = volumeValue / 100.0
-
+    # Animate the record button by using flags to switch the record icons over an interval to simulate a blink
     def AnimateRecordButton(self):
+        # Set an icon for the record button - uncolored icon for true and colored for false
         if self.flag:
             self.record_act.setIcon(QIcon(self.resource_path('icons/48x48/Record-Stop.png')))
-            # self.record_act.setIcon(QIcon(self.resource_path('Record-Stop.png')))
         else:
             self.record_act.setIcon(QIcon(self.resource_path('icons/48x48/Record.png')))
-            # self.record_act.setIcon(QIcon(self.resource_path('Record.png')))
 
-        self.flag = not self.flag
+        self.flag = not self.flag  # Invert the flag to create a boolean loop
 
+    # Stop animating the record button: Stop timer and set record icon to colored
     def StopAnimateRecordButton(self):
         self.timer.stop()
         self.record_act.setIcon(QIcon(self.resource_path('icons/48x48/Record.png')))
-        # self.record_act.setIcon(QIcon(self.resource_path('Record.png')))
 
-    def setFlag(self):
-        self.timer1Flag = False
-
-    # Sets up the thread to record the sound data from the microphone.
+    # Sets up the thread to record the sound data from the audio input device
     def RecordSoundData(self):
+        # Checks if there a music thread and sets one
         if not self.music_thread:
             self.music_thread = Thread(target=self.dotherecord, daemon=True)
-
+        # Checks if a music thread is an active music thread and stops recording if true
         if self.music_thread.is_alive():
             self.StopRecordData()
             return
-
+        # Set up for recording thread
         self.timer.start()
         self.playsoundstop = False
         self.titleoverridetext = "Recording"
         self.updateProgramWindowTitle()
         self.music_thread.start()
-        # self.titleoverridetext = ""
-        # self.updateProgramWindowTitle()
 
-    # Stops the recording.
+    # Stops the recording
     def StopRecordData(self):
         self.playsoundstop = True
         self.music_thread = None
@@ -1257,31 +1227,35 @@ class MusicPainter(QMainWindow):
         self.updateProgramWindowTitle()
         self.StopAnimateRecordButton()
 
-    # Saves the current recorded data to a wav file.
+    # Saves the current recorded data to a wav file
     def SaveRecording(self):
+        # Check that there is a recording to save
         if self.fullrecording is None:
             return
-
+        # Create a file dialog for saving the recording
         dialog = QFileDialog()
         dialog.setFilter(dialog.filter() | QDir.Hidden)
         dialog.setDefaultSuffix('wav')
         dialog.setAcceptMode(QFileDialog.AcceptSave)
         dialog.setNameFilters(['Wav Files (*.wav)'])
         dialog.setWindowTitle('Save As')
-
+        # Check if the user accepted the file save dialog
         if dialog.exec() == QDialog.Accepted:
-            filelist = dialog.selectedFiles()
+            filelist = dialog.selectedFiles()  # Get the list of selected files from the dialog
+            # Check if there is at least one selected file
             if len(filelist) > 0:
-                file_name = filelist[0]
-                wf = wave.open(file_name, "wb")
+                file_name = filelist[0]  # Get the first selected file as the file name
+                wf = wave.open(file_name, "wb")  # Open a wave file for writing
+                # Set the number of channels, sample width, frame rate, and write the frames
                 wf.setnchannels(self.RECORDCHANNELS)
                 wf.setsampwidth(pyaudio.PyAudio().get_sample_size(self.RECORDFORMAT))
                 wf.setframerate(self.RECORDRATE)
                 wf.writeframes(self.fullrecording)
-                wf.close()
+                wf.close()  # Close the wave file
 
     # Reports the properties of the currently loaded wav file.
     def SoundDataProperties(self):
+        # Calculates and sets the sound data properties, then concatenate to a string for display via message box
         try:
             af = wave.open(self.loadedFilename, 'rb')
             samplingfreq = af.getframerate()
@@ -1302,33 +1276,35 @@ class MusicPainter(QMainWindow):
         except:
             pass
 
-    # Clears the render list and screen.
+    # Clears the render list and screen
     def clearImage(self):
         self.rl.clear()
         self.canvas.update()
 
-    # Opens a wav file for rendering and playing.  The file data ia not stored internally
-    # since it must be streamed from the file in other functions.  The filename is all that
-    # is stored.
+    # Opens a wav file for rendering and playing. The file data is not stored internally since it
+    # must be streamed from the file in other functions. The filename is all that is stored
     def openFile(self):
-        file_name, _ = QFileDialog.getOpenFileName(self, "Open Wav File",
-                                                   "", "Wav Files (*.wav);;All Files (*.*)")
-
+        # Open a file dialog to get the path of a Wav file
+        file_name, _ = QFileDialog.getOpenFileName(self, "Open Wav File", "", "Wav Files (*.wav);;All Files (*.*)")
+        # Check if a file was selected
         if file_name:
             try:
-                # Check opening
+                # Attempt to read the Wav file
                 samplingfreq, sound = wavfile.read(file_name)
+                # Open the Wav file to check for errors
                 af = wave.open(file_name, 'rb')
                 af.close()
-
+                # Set the loaded filename and update the program window title
                 self.loadedFilename = file_name
                 self.updateProgramWindowTitle()
             except:
+                # Show a message box warning if there is an issue loading the file
                 QMessageBox.warning(self, "File Not Loaded", "The file " + file_name + " could not be loaded.",
                                     QMessageBox.Ok)
 
-    # Copies the current image to the system clipboard.
+    # Copies the current image to the system clipboard
     def copyImageToClipboard(self):
+        # Create pixmap of canvas size, render canvas onto pixmap, then clipboard the pixmap
         pixmap = QPixmap(self.canvas.size())
         self.canvas.render(pixmap)
         self.clipboard.setPixmap(pixmap)
@@ -1337,108 +1313,130 @@ class MusicPainter(QMainWindow):
     # Author: chetankhanna767
     # Last Updated: 05/17/2021
     def openDirectory(self):
+        # Initialize variables to track loaded files and mp3 file detection
         NoFilesLoaded = True
         mp3FileDetected = False
-        self.loadedFiles = []
+        self.loadedFiles = []  # Clear the list of loaded files
+        # Open a dialog to select the output folder and Check if the output folder is not empty
         _OutputFolder = QFileDialog.getExistingDirectory(self, "Select Output Folder", QDir.currentPath())
         if (_OutputFolder != ''):
+            # Iterate through files in the selected folder
             for filename in os.listdir(_OutputFolder):
+                # Create the full path to the file
                 f = os.path.join(_OutputFolder, filename)
+                # Extract the last four characters of the filename
                 TestString = f + "."
                 TestString = TestString[-5:-1]
+                # Check if the file is a .wav file
                 if (os.path.isfile(f) and TestString == ".wav"):
                     self.loadedFiles.append(f)
                     NoFilesLoaded = False
+                # Check if the file is a .mp3 file
                 elif (os.path.isfile(f) and TestString == ".mp3"):
                     mp3FileDetected = True
+            # Clear the ChosenFile dropdown and populate it with the loaded files
             self.ChosenFile.clear()
             for i in range(len(self.loadedFiles)):
                 self.ChosenFile.addItem(self.loadedFiles[i])
+
+        # Display an incompatibility message if .mp3 files are detected
         if (mp3FileDetected):
             QMessageBox.information(self, ".mp3 Files not Compatible",
                                     "Convert your file to a .wav for use with this program.", QMessageBox.Ok)
+        # Display a warning if no files are loaded
         elif (NoFilesLoaded):
             QMessageBox.warning(self, "No Files Loaded",
                                 "Open a Directory that contains .wav files to load them in the program.",
                                 QMessageBox.Ok)
 
-    # Saves the current image to an image file.  Defaults to a png file but the file type
-    # is determined by the extension on the filename the user selects.
+    # Saves the current image to an image file. Defaults to a png file but the file type
+    # is determined by the extension on the filename the user selects
     def saveAsImage(self):
+        # Create a file dialog for saving the image
         dialog = QFileDialog()
         dialog.setFilter(dialog.filter() | QDir.Hidden)
         dialog.setAcceptMode(QFileDialog.AcceptSave)
         dialog.setNameFilters(['PNG Files (*.png)', 'JPEG Files (*.jpg)', 'Bitmap Files (*.bmp)'])
         dialog.setWindowTitle('Save Image As')
-
+        # Check if the user accepted the file save dialog
         if dialog.exec() == QDialog.Accepted:
-            ext = "png"
+            ext = "png"  # Default image extension to "png"
+            # Extract the selected image format from the dialog
             list = dialog.selectedNameFilter().split(" ")
             ext = list[len(list) - 1][3:-1]
             dialog.setDefaultSuffix(ext)
-
-            filelist = dialog.selectedFiles()
+            filelist = dialog.selectedFiles()  # Get the list of selected files from the dialog
+            # Check if there is at least one selected file
             if len(filelist) > 0:
-                file_name = filelist[0]
+                file_name = filelist[0] # Get the first selected file as the file name
                 try:
+                    # Create a QPixmap of the canvas size and render the canvas onto it, and save as an image file
                     pixmap = QPixmap(self.canvas.size())
                     self.canvas.render(pixmap)
                     pixmap.save(file_name)
                 except:
+                    # Show a warning if there is an issue saving the file
                     QMessageBox.warning(self, "File Not Saved", "The file " + file_name + " could not be saved.",
                                         QMessageBox.Ok)
 
     # Prints the current image to the printer using the selected printer options from the
-    # options list.  This function does some initial setup, calls the print dialog box for
+    # options list. This function does some initial setup, calls the print dialog box for
     # user input, and then calls printPreview which invokes the printing.
     def printImage(self):
-        printer = QPrinter()
-        dialog = QPrintDialog(printer, self)
-        printer.setDocName("MusicImage")
-
+        printer = QPrinter()  # Create a QPrinter object for printing
+        dialog = QPrintDialog(printer, self)  # Create a print dialog with the specified printer
+        printer.setDocName("MusicImage")  # Set the document name for the printer
+        # Define left and top offsets for the printed page
         leftoffset = 36
         topoffset = 36
 
-        printer.setResolution(300)
+        printer.setResolution(300)  # Set the printer resolution to 300 DPI
+        # Set the page layout to Letter size, landscape orientation, and with specified margins
         pl = QPageLayout(QPageSize(QPageSize.Letter), QPageLayout.Landscape,
                          QMarginsF(leftoffset, topoffset, 36, 36))
         printer.setPageLayout(pl)
+        # Check if the user accepted the print dialog
         if dialog.exec() == QDialog.Accepted:
-            self.printPreview(printer)
+            self.printPreview(printer)  # Call the printPreview method with the configured printer
 
     # Invokes a print preview of the current image using the selected printer options from the
     # options list.  This function does some initial setup, calls the print preview dialog box,
     # and then calls printPreview which invokes the printing.
     def printPreviewImage(self):
-        printer = QPrinter()
-        dialog = QPrintPreviewDialog(printer)
-        printer.setDocName("MusicImage")
-
+        printer = QPrinter()  # Create a QPrinter object for printing
+        dialog = QPrintPreviewDialog(printer)  # Create a QPrintPreviewDialog with the specified printer
+        printer.setDocName("MusicImage")  # Set the document name for the printer
+        # Set the document name for the printer
         leftoffset = 36
         topoffset = 36
 
-        printer.setResolution(300)
+        printer.setResolution(300)  # Set the printer resolution to 300 DPI
+        # Set the page layout to Letter size, portrait orientation, and with specified margins
         pl = QPageLayout(QPageSize(QPageSize.Letter), QPageLayout.Portrait,
                          QMarginsF(leftoffset, topoffset, 36, 36))
         printer.setPageLayout(pl)
 
-        dialog.paintRequested.connect(self.printPreview)
+        dialog.paintRequested.connect(self.printPreview)  # Connect the paintRequested signal to the printPreview method
         dialog.exec()
 
     # This function does the printing by invoking an off-screen version of the image viewer and
     # rendering it to a pixmap.  This pixmap is then drawn as an image to the painter object
     # attached to the printer.
     def printPreview(self, printer):
-        printviewer = ObjectListViewer(self, self.mainapp)
-        printres = printer.resolution()
-
+        printviewer = ObjectListViewer(self, self.mainapp)  # Create a print viewer
+        printres = printer.resolution()  # Get the resolution of the printer
+        # Calculate the width and height of the print viewer based on the canvas dimensions
         wid = 7 * printres
         hei = wid * self.canvas.height() / self.canvas.width()
+        # Set the fixed size of the print viewer
         printviewer.setFixedSize(QSize(round(wid), round(hei)))
+        # Set zoom factor and center of the print viewer to match the canvas
         printviewer.zoomfactor = self.canvas.zoomfactor
         printviewer.center = self.canvas.center
+        # Create a QPixmap with the size of the print viewer and render the print viewer onto the pixmap
         pixmap = QPixmap(printviewer.size())
         printviewer.render(pixmap)
+        # Create a QPainter for the printer and draw the pixmap onto the printer
         painter = QPainter(printer)
         painter.drawPixmap(QPoint(0, 0), pixmap)
         painter.end()
@@ -1447,7 +1445,7 @@ class MusicPainter(QMainWindow):
     def print_completed(self, success):
         pass  # Nothing needs to be done.
 
-
+# Check if the script is being run as the main program
 if __name__ == '__main__':
     """
     Initiate the program. 
