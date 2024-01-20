@@ -3,7 +3,6 @@ import random
 from PySide2.QtGui import (QColor)
 import numpy as np
 
-
 class PaintBrush:
     def __init__(self, parent=None):
         self.RLData = []
@@ -24,33 +23,40 @@ class PaintBrush:
         self.numberAlgorithms = 13
         self.currentAlgorithm = 1
 
-    # Resets the links to the renderlist and frequency data in the main. S
-
+    # Resets the links to the render list and frequency data in the main for the corresponding algorithm
+    # Resets the links for algorithm 6
     def SetAlg6(self):
         self.RLData = [1, 1, 1, -1, -1, -1, -1, 1, 0]
         self.TriangleList = []
 
+    # Resets the links for algorithm 2, 3, 4, 5
     def SetAlg2345(self):
         self.RLData = [0, 0, 0]
 
+    # Resets the links for algorithm 7
     def SetAlg7(self):
         self.RLData = [3.14159265359, .1, .1, True, 0, True]
 
+    # Resets the links for algorithm 8
     def SetAlg8(self):
         self.RLData = [3.14159265359, .025, .1, True, 0, 0, .025]
 
+    # Resets the links for algorithm 9
     def SetAlg9(self):
         self.RLData = [True, 0, 0]
         self.TriangleList = []
         self.LineList = []
 
+    # Resets the links for algorithm 10
     def SetAlg10(self):
         self.RLData = [0, 0]
 
+    # Resets the links for algorithm 13
     def SetAlg13(self):
         self.RLData = [0, 0, 0, 0, 0,]
         self.avgList = []
 
+    # Returns an RGB list given a value: Aids some algorithms in producing color unique to a data range
     def getRBG(self, RBGVal):
         RBG = [0, 0, 0]
         if RBGVal >= 0 and RBGVal <= 255:
@@ -79,58 +85,68 @@ class PaintBrush:
             RBG[2] = 0
         return RBG
 
+    # Resets the list links for render and frequency list
     def resetlistlinks(self):
         self.rl = self.mainapp.rl
         self.fl = self.mainapp.freqlist
 
-    # Accessor functions for the render and frequency lists.
+    # Accessor functions for the render and frequency lists
+    # Returns the render list at an index if valid
     def getRenderList(self, n):
         if n >= 0 and n < len(self.rl):
             return self.rl[n]
         else:
             return None
 
+    # Returns the frequency list at an index if valid
     def getFrequencyList(self, n):
         if n >= 0 and n < len(self.fl):
             return self.fl[n]
         else:
             return None
 
+    # Returns the render list at n positions from the last index if valid
     def getLastRenderList(self, n):
         if n > 0 and n <= len(self.rl):
             return self.rl[len(self.rl) - n]
         else:
             return None
 
+    # Returns the frequency list at n positions from the last index if valid
     def getLastFrequencyList(self, n):
         if n > 0 and n <= len(self.fl):
             return self.fl[len(self.fl) - n]
         else:
             return None
 
-    # Object creation for adding to the renderlist.
-    #  0 = point, 1 = line, 2 = circle, 3 = rectangle
+    # Object creation for adding to the render list
+    #  0 = point, 1 = line, 2 = circle, 3 = rectangle 4 = triangle
+    # Create a point on the canvas given coordinates and color
     def makePoint(self, x, y, col):
         newcol = QColor(col)
         return [0, x, y, newcol]
 
+    # Create a line on the canvas given coordinates and color
     def makeLine(self, x1, y1, x2, y2, col):
         newcol = QColor(col)
         return [1, x1, y1, x2, y2, newcol]
 
+    # Create a circle on the canvas given coordinates, color, fill status, and radius
     def makeCircle(self, cx, cy, rad, fill, col):
         newcol = QColor(col)
         return [2, cx, cy, rad, fill, newcol]
 
+    # Create a point on the canvas given coordinates, color, and fill status
     def makeRectangle(self, ULx, ULy, LRx, LRy, fill, col):
         newcol = QColor(col)
         return [3, ULx, ULy, LRx, LRy, fill, newcol]
 
+    # Create a triangle on the canvas given coordinates, color, and fill status
     def makeTriangle(self, x1, y1, x2, y2, x3, y3, fill, col):
         newcol = QColor(col)
         return [4, x1, y1, x2, y2, x3, y3, fill, newcol]
 
-    # Render function gateway.
+    # Render function gateway: Use the selected algorithm to render an image
     def draw(self, data, datapos, spectdata, active):
         if self.currentAlgorithm == 1:
             self.algorithm1(data, datapos)
@@ -159,38 +175,8 @@ class PaintBrush:
         elif self.currentAlgorithm == 13:
             self.algorithm13(data, active)
 
-    # Rendering Algorithms.
-
-    # def algorithm1(self, data):
-    #    rx1 = np.random.random() * 2 - 1
-    #    ry1 = np.random.random() * 2 - 1
-    #    rx2 = np.random.random() * 2 - 1
-    #    ry2 = np.random.random() * 2 - 1
-    #    rx3 = np.random.random() * 2 - 1
-    #    ry3 = np.random.random() * 2 - 1
-
-    #    col = QColor()
-    #    col.setRgbF(np.random.random(), np.random.random(), np.random.random(), 1)
-    #    clear = QColor()
-    #    clear.setRgbF(1, 1, 1, 1)
-    #    self.rl.add(self.makeRectangle(-1, 1, 1, -1, True, clear))
-    #    self.rl.add(self.makeTriangle(rx1, ry1, rx2, ry2, rx3, ry3, True, col))
-
-    # def algorithm2(self, data, pos):
-    #    numfreq = len(self.fl)
-    #    maxfreq = 5000
-    #    x = 2 * pos / numfreq - 1
-    #    y = data[0] / maxfreq
-
-    #    col = QColor()
-    #    col.setRgbF(1, 0, 0, 1)
-    #    self.rl.add(self.makeLine(x, 0.25, x, y + .25, col))
-
-    #    if len(data) > 1:
-    #        y = data[1] / maxfreq
-    #        col.setRgbF(0, 1, 0, 1)
-    #        self.rl.add(self.makeLine(x, -.75, x, y - .75, col))
-
+    # Rendering Algorithms
+    # Frequency Dots: plots red circles on such that the coordinates are decided by the frequency data
     def algorithm1(self, data, pos):
         numfreq = len(self.fl)
         maxfreq = 2000
@@ -203,6 +189,7 @@ class PaintBrush:
 
         self.rl.add(self.makeCircle(x, y - 0.5, 0.01, True, col))
 
+    # Dynamite: Generates an image resembling an explosion by using sin and cos functions with data as amplitude
     def algorithm2(self, data, spectdata):
         self.RLData[2] += 0.1
         theta = self.RLData[2] % np.pi * 2
@@ -218,6 +205,8 @@ class PaintBrush:
         self.RLData[0] = x
         self.RLData[1] = y
 
+    # Ball of Yarn: Generates an image resembling a yarn ball by using sin and cos functions with data as amplitude
+    # and using data to calculate theta, generating imperfect and inconsistent circles
     def algorithm3(self, data, spectdata):
         theta = data[0] % np.pi * 2
         amp = data[0] % 1
@@ -232,6 +221,7 @@ class PaintBrush:
         self.RLData[0] = x
         self.RLData[1] = y
 
+    # 3-D Symmetry: Uses parametric equations to produce a consistent image with colors corresponding to data
     def algorithm4(self, data, spectdata):
         self.RLData[2] += 0.1
         theta = self.RLData[2] % np.pi * 2
@@ -246,6 +236,7 @@ class PaintBrush:
         self.RLData[0] = x
         self.RLData[1] = y
 
+    # Spirograph: Uses parametric equations to produce a consistent image with colors corresponding to data
     def algorithm5(self, data, spectdata):
         self.RLData[2] += 0.1
         theta = self.RLData[2] % np.pi * 2
@@ -260,6 +251,7 @@ class PaintBrush:
         self.RLData[0] = x
         self.RLData[1] = y
 
+    # Colorful Void: Generates an optical allusion with triangles resembling a void with colors corresponding to data
     def algorithm6(self, data, spect):
         TriCol = QColor()
         Hue = data[0] * 10
@@ -323,6 +315,7 @@ class PaintBrush:
                 self.rl.add(self.makeLine(Triangle[0][0], Triangle[0][1], Triangle[1][0], Triangle[1][1], LineCol))
                 self.rl.add(self.makeLine(Triangle[0][0], Triangle[0][1], Triangle[2][0], Triangle[2][1], LineCol))
 
+    # Vortex: Generates a vortex of varying size and color by using cos and sin functions and setting color with data
     def algorithm7(self, data, spect):
         if (self.RLData[3]):
             self.RLData[4] = data[0]
@@ -398,6 +391,7 @@ class PaintBrush:
         if (self.RLData[3]):
             self.RLData[3] = False
 
+    # Illuminate Snake: Generates a path of circles resembling a snake with color determined by data
     def algorithm8(self, data, spect):
         CircCol = QColor()
         CircCol2 = QColor()
@@ -460,8 +454,8 @@ class PaintBrush:
         if (self.RLData[3]):
             self.RLData[3] = False
 
+    # Triangle Stacker: Generates triangles that build upon each other with triangle height and color determined by data
     def algorithm9(self, data, spect):
-
         TriCol = QColor()
         Hue = data[0] * 10
         TriCol.setHsv(Hue, 255, 130, 255)
@@ -542,6 +536,7 @@ class PaintBrush:
                 if (self.RLData[2] > (len(self.TriangleList) - 1)):
                     self.RLData[2] = 0
 
+    # Spiraling Circles: Generates circles in a windmill shape using data to determine color and circle size
     def algorithm10(self, data, spectdata):
         self.RLData[0] += 0.51
         self.RLData[1] += 0.51
@@ -574,8 +569,9 @@ class PaintBrush:
         if (self.RLData[1] != 0):
             col = QColor()
             col.setRgb((spectdata % 155) + 100, 75, (data[0] % 75) + 180, 255)
-            self.rl.add(self.makeCircle(x, y, 0.05, True, col))
+            self.rl.add(self.makeCircle(x, y, (0.01 * spectdata) % 0.06, True, col))
 
+    # Circulating Squares: Generates squares in a widening circular pattern in which data determines color
     def algorithm11(self, data, pos):
         col = QColor()
 
@@ -589,19 +585,16 @@ class PaintBrush:
 
         if (avg > 326):
             col.setRgbF(1, 0, 0, 1)
-            # self.rl.add(self.makePoint(x,y,col))
             self.rl.add(self.makeRectangle(x - 0.05, y + 0.05, x + 0.05, y - 0.05, True, col))
         elif (250 < avg <= 325):
             col.setRgbF(avg / 1000, 1, avg / 2000, 1)
-            # self.rl.add(self.makePoint(x,y,col))
             self.rl.add(self.makeRectangle(x - 0.05, y + 0.05, x + 0.05, y - 0.05, True, col))
         else:
             col.setRgbF(0, 0, 0, 1)
-            # self.rl.add(self.makePoint(x, y, col))
             self.rl.add(self.makeRectangle(x - 0.05, y + 0.05, x + 0.05, y - 0.05, True, col))
 
+    # Sporadic Squares: Generates squares in random positions with color determined by data
     def algorithm12(self, data):
-
         col = QColor()
 
         if (len(data) > 1):
@@ -609,41 +602,31 @@ class PaintBrush:
         else:
             avg = data[0]
 
-        # x = np.random.random() * 2 - 1
-        # y = np.random.random() * 2 - 1
-
-        # x = np.cos(pos/len(self.fl)*2*np.pi)
-        # y = np.sin(pos / len(self.fl) * 2 * np.pi)
-
-        # x = pos/len(self.fl) * np.cos(pos/len(self.fl)*2*np.pi)
-        # y = pos/len(self.fl) * np.sin(pos / len(self.fl) * 2 * np.pi)
-
         x = np.random.random() * 2 - 1
         y = np.random.random() * 2 - 1
 
         if (avg > 300):
             col.setRgbF(1, 0, 0, 1)
-            # self.rl.add(self.makePoint(x,y,col))
             self.rl.add(self.makeRectangle(x - 0.05, y + 0.05, x + 0.05, y - 0.05, True, col))
         elif (201 < avg <= 299):
             col.setRgbF(0.5, 0, 0, 1)
-            # self.rl.add(self.makePoint(x,y,col))
             self.rl.add(self.makeRectangle(x - 0.05, y + 0.05, x + 0.05, y - 0.05, True, col))
         elif (150 < avg <= 200):
             col.setRgbF(0, 1, 0, 1)
-            # self.rl.add(self.makePoint(x,y,col))
             self.rl.add(self.makeRectangle(x - 0.05, y + 0.05, x + 0.05, y - 0.05, True, col))
         else:
             col.setRgbF(0, 0, 0, 1)
-            # self.rl.add(self.makePoint(x, y, col))
             self.rl.add(self.makeRectangle(x - 0.05, y + 0.05, x + 0.05, y - 0.05, True, col))
 
+    # Emotional Progression: Generates large squares that split the canvas into ninths such that the color is determined
+    # by the data average over an interval (ninth of data section). Loaded files are evenly split into these intervals
+    # and will not be overlapped. Live recordings have a set interval and will overlap after nine interval iterations.
+    # This algorithm attempts to depict emotion using frequency data and produce corresponding colors to portray it
     def algorithm13(self, data, active):
         if (len(data) > 1):
             avg = (data[0] + data[1]) / 2
         else:
             avg = data[0]
-        # print(avg)
         self.avgList.append(avg)
 
         if (not active):
@@ -717,11 +700,11 @@ class PaintBrush:
 
             totalAvg = 0.0
             count = 0
+            i = 0
             for i in self.avgList:
                     totalAvg += self.avgList.pop(count)
                     count += 1
             totalAvg /= count
-            print(totalAvg)
             self.avgList.clear()
             col = QColor()
             if (totalAvg < 50):
@@ -735,14 +718,10 @@ class PaintBrush:
             else:
                 col.setRgbF(0, 1, 0, 1)
 
-        # if (self.RLData[0] < 8):
-        #     self.RLData[0] += 1
-        # else:
-        #     self.RLData[0] = 0
-
         if (not active):
             self.rl.add(self.makeRectangle(self.RLData[1], self.RLData[2], self.RLData[3], self.RLData[4], True, col))
 
+    # Tests if a triangle is a valid triangle or if it must be reassessed
     def ValidTriangle(self, Triangle):
         Valid = True
         for i in self.TriangleList:
@@ -775,6 +754,7 @@ class PaintBrush:
                     Valid = False
         return Valid
 
+    # Tests if a point is valid, as in, if it is within the canvas bounds
     def ValidPoint(self, Point):
         Valid = True
         if (Point[0] > 1) or (Point[0] < -1):
@@ -786,13 +766,13 @@ class PaintBrush:
     # https://bryceboe.com/2006/10/23/line-segment-intersection-algorithm/
     # Author: Bryce Boe
     # Last Updated: 10/23/2006
-
+    # Support function to assist the intersection function
     def ccw(self, Point1, Point2, Point3):
         return (Point3[1] - Point1[1]) * (Point2[0] - Point1[0]) > (Point2[1] - Point1[1]) * (Point3[0] - Point1[0])
 
     # https://bryceboe.com/2006/10/23/line-segment-intersection-algorithm/
     # Author: Bryce Boe
     # Last Updated: 10/23/2006
-
+    # Support function to handle line segment intersections for triangle creation
     def intersect(self, A, B, C, D):
         return self.ccw(A, C, D) != self.ccw(B, C, D) and self.ccw(A, B, C) != self.ccw(A, B, D)

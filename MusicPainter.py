@@ -1441,9 +1441,9 @@ class MusicPainter(QMainWindow):
         painter.drawPixmap(QPoint(0, 0), pixmap)
         painter.end()
 
-    # Ending dummy function for print completion.
+    # Ending dummy function for print completion
     def print_completed(self, success):
-        pass  # Nothing needs to be done.
+        pass  # Nothing needs to be done
 
 # Check if the script is being run as the main program
 if __name__ == '__main__':
