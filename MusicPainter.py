@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 """
 Created: 10/1/2022
-Revised: 12/30/2023
+Last Updated: 12/30/2023
 
-@authors: Luke Zolenski, Don Spickler & Kyle Tranfaglia
+Authors: Luke Zolenski, Don Spickler & Kyle Tranfaglia
 
 This program is a music/sound visualizer for frequency data from either a wav file or
 an input stream from a microphone. It allows the user to set chunk size and rendering algorithm
@@ -12,7 +12,7 @@ and render images based on the wav or stream data. It also has features to rende
 wav file is playing and to save the streamed music to a wav file.
 
 """
-# System imports.
+# System imports
 import platform
 import sys
 import os
