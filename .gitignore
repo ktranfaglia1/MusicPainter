@@ -1,2 +1,5 @@
 # Ignore the Downloads folder
 /downloads/
+.idea/
+__pycache__/
+*.pyc
